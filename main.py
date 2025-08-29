@@ -1,6 +1,7 @@
 import configparser
 import logging
 import os
+import sqlite3
 import sys
 
 from renogybt import (
@@ -8,35 +9,89 @@ from renogybt import (
     Utils,
 )
 
-logging.basicConfig(level=logging.INFO)
+# module logs a lot of debug info, set to WARNING or ERROR to reduce output
+logging.basicConfig(level=logging.WARNING)
 
 logger = logging.getLogger("energy_monitor")
 logger.setLevel(logging.DEBUG)
 
-config_file = sys.argv[1] if len(sys.argv) > 1 else 'config.ini'
-config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), config_file)
-config = configparser.ConfigParser(inline_comment_prefixes=('#'))
-config.read(config_path)
+class EnergyMonitor:
+    def __init__(
+            self,
+            config_file: str,
+            db_path: str
+        ):
+        self.config = self.load_config(config_file)
 
-enable_polling = config['data'].getboolean('enable_polling')
+        self.client = BatteryClient(
+            self.config,
+            self.on_data_received,
+            self.on_error_received
+        )
+        self.conn = sqlite3.connect(db_path)
+        self.create_table()
 
-# the callback func when you receive data
-def on_data_received(client, data):
-    filtered_data = Utils.filter_fields(data, config['data']['fields'])
-    logger.debug(f"{client.ble_manager.device.name} => {filtered_data}")
+    def load_config(self, config_file: str):
+        config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), config_file)
+        config = configparser.ConfigParser(inline_comment_prefixes=('#'))
+        config.read(config_path)
 
-    if not enable_polling:
-        logger.info("Stopping client (polling disabled)")
-        client.stop()
+        return config
 
-# error callback
-def on_error(client, error):
-    logger.error(f"on_error: {error}")
+    def create_table(self):
+        with self.conn:
+            self.conn.execute('''
+                CREATE TABLE IF NOT EXISTS battery_state (
+                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    voltage REAL,
+                    current REAL,
+                    remaining_charge REAL,
+                    capacity REAL,
+                    cell_voltage_0 REAL,
+                    cell_voltage_1 REAL,
+                    cell_voltage_2 REAL,
+                    cell_voltage_3 REAL,
+                    temperature_0 REAL,
+                    temperature_1 REAL,
+                    temperature_2 REAL,
+                    temperature_3 REAL
+                )
+            ''')
+
+    def log_data(self, voltage, current, power, temperature):
+        with self.conn:
+            self.conn.execute('''
+                INSERT INTO energy_data (voltage, current, power, temperature)
+                VALUES (?, ?, ?, ?)
+            ''', (voltage, current, power, temperature))
+
+    def start(self):
+        logger.info("Starting Energy Monitor")
+
+        self.client.start()
+
+    def stop(self):
+        logger.info("Stopping Energy Monitor")
+        self.client.stop()
+
+    # the callback func when you receive data
+    def on_data_received(self, client, data):
+        filtered_data = Utils.filter_fields(data, self.config['data']['fields'])
+        logger.debug(f"{client.ble_manager.device.name} => {filtered_data}")
+
+        if not self.config['data'].getboolean('enable_polling'):
+            self.stop()
+
+    # error callback
+    def on_error_received(self, client, error):
+        logger.error(f"on_error: {error}")
 
 def main():
-    client = BatteryClient(config, on_data_received, on_error)
+    config_file = sys.argv[1] if len(sys.argv) > 1 else 'config.ini'
 
-    client.start()
+    energy_monitor = EnergyMonitor(config_file, 'energy_data.db')
+
+    energy_monitor.start()
 
 if __name__ == "__main__":
     main()
