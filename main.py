@@ -39,6 +39,7 @@ class EnergyMonitor:
         return config
 
     def create_table(self):
+        logger.debug("Creating database table (if not exists)")
         with self.conn:
             self.conn.execute('''
                 CREATE TABLE IF NOT EXISTS battery_state (
@@ -73,6 +74,7 @@ class EnergyMonitor:
         temperature_2,
         temperature_3
     ):
+        logger.debug("Storing received data to database")
         with self.conn:
             self.conn.execute('''
                 INSERT INTO battery_state (
@@ -116,7 +118,8 @@ class EnergyMonitor:
     # the callback func when you receive data
     def on_data_received(self, client, data):
         filtered_data = Utils.filter_fields(data, self.config['data']['fields'])
-        logger.debug(f"{client.ble_manager.device.name} => {filtered_data}")
+        logger.info("Data received")
+        logger.debug(filtered_data)
 
         self.log_data(
             voltage=filtered_data.get('voltage'),
