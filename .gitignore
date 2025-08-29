@@ -5,3 +5,5 @@ solar-reader.py
 RelayApp.py
 relay.py
 .DS_Store
+
+*.db
