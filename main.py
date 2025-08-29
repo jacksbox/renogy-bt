@@ -58,12 +58,51 @@ class EnergyMonitor:
                 )
             ''')
 
-    def log_data(self, voltage, current, power, temperature):
+    def log_data(
+        self,
+        voltage,
+        current,
+        remaining_charge,
+        capacity,
+        cell_voltage_0,
+        cell_voltage_1,
+        cell_voltage_2,
+        cell_voltage_3,
+        temperature_0,
+        temperature_1,
+        temperature_2,
+        temperature_3
+    ):
         with self.conn:
             self.conn.execute('''
-                INSERT INTO energy_data (voltage, current, power, temperature)
-                VALUES (?, ?, ?, ?)
-            ''', (voltage, current, power, temperature))
+                INSERT INTO battery_state (
+                    voltage,
+                    current,
+                    remaining_charge,
+                    capacity,
+                    cell_voltage_0,
+                    cell_voltage_1,
+                    cell_voltage_2,
+                    cell_voltage_3,
+                    temperature_0,
+                    temperature_1,
+                    temperature_2,
+                    temperature_3
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                voltage,
+                current,
+                remaining_charge,
+                capacity,
+                cell_voltage_0,
+                cell_voltage_1,
+                cell_voltage_2,
+                cell_voltage_3,
+                temperature_0,
+                temperature_1,
+                temperature_2,
+                temperature_3
+            ))
 
     def start(self):
         logger.info("Starting Energy Monitor")
@@ -78,6 +117,21 @@ class EnergyMonitor:
     def on_data_received(self, client, data):
         filtered_data = Utils.filter_fields(data, self.config['data']['fields'])
         logger.debug(f"{client.ble_manager.device.name} => {filtered_data}")
+
+        self.log_data(
+            voltage=filtered_data.get('voltage'),
+            current=filtered_data.get('current'),
+            remaining_charge=filtered_data.get('remaining_charge'),
+            capacity=filtered_data.get('capacity'),
+            cell_voltage_0=filtered_data.get('cell_voltage_0'),
+            cell_voltage_1=filtered_data.get('cell_voltage_1'),
+            cell_voltage_2=filtered_data.get('cell_voltage_2'),
+            cell_voltage_3=filtered_data.get('cell_voltage_3'),
+            temperature_0=filtered_data.get('temperature_0'),
+            temperature_1=filtered_data.get('temperature_1'),
+            temperature_2=filtered_data.get('temperature_2'),
+            temperature_3=filtered_data.get('temperature_3')
+        )
 
         if not self.config['data'].getboolean('enable_polling'):
             self.stop()
