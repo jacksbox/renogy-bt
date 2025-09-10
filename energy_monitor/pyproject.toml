@@ -1,7 +1,7 @@
 [project]
-name = "renogy-bt"
+name = "energy_monitor"
 version = "0.1.0"
-description = "Add your description here"
+description = "Jacksbox mobile battery monitoring"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
