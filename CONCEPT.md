@@ -4,12 +4,13 @@
 
 ### Version 0.1
 
-* read battery data periodically
-    * store in sqlite database
+* ✅ read battery data periodically
+    * ✅ store in sqlite database
 * local website
     * show current
         * state of charge abs/percentage
         * charge / discharge
+    * autorefresh 10
 
 ### Version 0.2
 
