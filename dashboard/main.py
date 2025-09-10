@@ -35,14 +35,17 @@ class SimpleHandler(BaseHTTPRequestHandler):
             if row:
                 html = f"""
                 <html>
-                    <head><title>Battery State</title></head>
+                    <head>
+                    <title>Battery State</title>
+                    <meta http-equiv="refresh" content="10">
+                    </head>
                     <body>
-                        <h1>Latest Battery State</h1>
-                        <ul>
-                            <li><strong>Timestamp:</strong> {row['timestamp']}</li>
-                            <li><strong>Remaining Charge:</strong> {row['remaining_charge']} % ({((row['remaining_charge']/100) * row['capacity']):.2f} Ah)</li>
-                            <li><strong>Current:</strong> {row['current']} A</li>
-                        </ul>
+                    <h1>Latest Battery State</h1>
+                    <ul>
+                        <li><strong>Timestamp:</strong> {row['timestamp']}</li>
+                        <li><strong>Remaining Charge:</strong> {row['remaining_charge']} % ({((row['remaining_charge']/100) * row['capacity']):.2f} Ah)</li>
+                        <li><strong>Current:</strong> {row['current']} A</li>
+                    </ul>
                     </body>
                 </html>
                 """
