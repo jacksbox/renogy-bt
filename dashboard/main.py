@@ -2,7 +2,7 @@ import json
 import sqlite3
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-DB_PATH = '/Users/jacomo/code/renogy-bt/energy_data.db'
+DB_PATH = '../renogy-bt/energy_data.db'
 
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
